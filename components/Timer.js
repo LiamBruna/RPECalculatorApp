@@ -7,19 +7,31 @@ export default function Timer({ setShowComponent }) {
   const [seconds, setSeconds] = useState('00');
   const [isActive, setIsActive] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
+  const [soundObject, setSoundObject] = useState(null);
+  const [hasReset, setHasReset] = useState(false);
+
 
   async function playSoundAndVibrate() {
-    const soundObject = new Audio.Sound();
+    let sound = soundObject;
+    if (soundObject === null) {
+      sound = new Audio.Sound();
+      setSoundObject(sound);
+    }
     try {
-      await soundObject.loadAsync(require(''));
-      await soundObject.playAsync();
-      // Your sound is playing!
+      await sound.loadAsync(require('../assets/alarm.mp3'));
+      await sound.playAsync();
     } catch (error) {
       // An error occurred!
     }
-  
-    // Vibrate for 500ms
     Vibration.vibrate(500);
+  }
+  
+  async function stopSoundAndVibrate() {
+    if (soundObject !== null) {
+      await soundObject.stopAsync();
+    }
+    Vibration.cancel();
   }  
 
   function toggle() {
@@ -27,16 +39,19 @@ export default function Timer({ setShowComponent }) {
       if (countdown === 0) {
         setCountdown(parseInt(minutes) * 60 + parseInt(seconds));
       }
+      setHasReset(false);
     }
     setIsActive(!isActive);
-  }
+    setHasStarted(true);
+  }  
 
   function reset() {
     setMinutes('00');
     setSeconds('00');
     setCountdown(0);
     setIsActive(false);
-  }
+    setHasReset(true);
+  }  
 
   useEffect(() => {
     let interval = null;
@@ -46,12 +61,13 @@ export default function Timer({ setShowComponent }) {
       }, 1000);
     } else if (!isActive && countdown !== 0) {
       clearInterval(interval);
-    } else if (countdown === 0) {
+    } else if (countdown === 0 && hasStarted && !hasReset) {
       playSoundAndVibrate();
     }
     return () => clearInterval(interval);
-  }, [isActive, countdown]);
-
+  }, [isActive, countdown, hasStarted, hasReset]);
+  
+  
   function handleFocus(setValue) {
     return () => {
       setValue(value => value.replace(/^0+/, ''));
@@ -81,10 +97,10 @@ export default function Timer({ setShowComponent }) {
         <Button title={isActive ? 'Pause' : 'Start'} onPress={toggle} color="#2c2a2a"/>
       </View>
       <View style={styles.card}>
-        <Button title="Reset" onPress={reset} color="#2c2a2a"/>
+        <Button title="Reset" onPress={() => {reset(); stopSoundAndVibrate();}} color="#2c2a2a"/>
       </View>
       <View style={styles.cardvolver} >
-        <Button title="Volver al inicio" onPress={() => setShowComponent('')} color="#2c2a2a"/>
+      <Button title="Volver al inicio" onPress={() => {stopSoundAndVibrate(); setShowComponent('');}} color="#2c2a2a"/>
       </View>
     </View>
   );
