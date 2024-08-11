@@ -1,11 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Text, View, Button, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, View, Button, TextInput, StyleSheet, Vibration } from 'react-native';
+import { Audio } from 'expo-av';
 
 export default function Timer({ setShowComponent }) {
   const [minutes, setMinutes] = useState('00');
   const [seconds, setSeconds] = useState('00');
   const [isActive, setIsActive] = useState(false);
   const [countdown, setCountdown] = useState(0);
+
+  async function playSoundAndVibrate() {
+    const soundObject = new Audio.Sound();
+    try {
+      await soundObject.loadAsync(require(''));
+      await soundObject.playAsync();
+      // Your sound is playing!
+    } catch (error) {
+      // An error occurred!
+    }
+  
+    // Vibrate for 500ms
+    Vibration.vibrate(500);
+  }  
 
   function toggle() {
     if (!isActive) {
@@ -31,6 +46,8 @@ export default function Timer({ setShowComponent }) {
       }, 1000);
     } else if (!isActive && countdown !== 0) {
       clearInterval(interval);
+    } else if (countdown === 0) {
+      playSoundAndVibrate();
     }
     return () => clearInterval(interval);
   }, [isActive, countdown]);
